@@ -42,17 +42,19 @@ let
     srcs.io_bazel_rules_sass
     srcs.platforms
     # `bazel query` wants all of these to be available regardless of platform.
-    srcs."java_tools_javac11_darwin-v8.0.zip"
-    srcs."java_tools_javac11_linux-v8.0.zip"
-    srcs."java_tools_javac11_windows-v8.0.zip"
-    srcs."coverage_output_generator-v2.1.zip"
+    srcs."java_tools_javac11_darwin-v10.0.zip"
+    srcs."java_tools_javac11_linux-v10.0.zip"
+    srcs."java_tools_javac11_windows-v10.0.zip"
+    srcs."coverage_output_generator-v2.5.zip"
     srcs.build_bazel_rules_nodejs
-    srcs."android_tools_pkg-0.19.0rc1.tar.gz"
+    srcs."android_tools_pkg-0.19.0rc3.tar.gz"
     srcs."bazel-toolchains-3.1.0.tar.gz"
     srcs.rules_pkg
     srcs.rules_cc
     srcs.rules_java
     srcs.rules_proto
+    srcs.com_github_grpc_grpc
+    srcs.upb
   ]);
 
   distDir = runCommand "bazel-deps" { } ''
@@ -118,7 +120,7 @@ let
   remote_java_tools = stdenv.mkDerivation {
     name = "remote_java_tools_${system}";
 
-    src = srcDepsSet."java_tools_javac11_${system}-v8.0.zip";
+    src = srcDepsSet."java_tools_javac11_${system}-v10.0.zip";
 
     nativeBuildInputs = [ autoPatchelfHook unzip ];
     buildInputs = [ gcc-unwrapped ];
@@ -174,8 +176,6 @@ in stdenv.mkDerivation rec {
   sourceRoot = ".";
 
   patches = [
-    ./python-shebang.patch
-
     # On Darwin, the last argument to gcc is coming up as an empty string. i.e: ''
     # This is breaking the build of any C target. This patch removes the last
     # argument if it's found to be an empty string.

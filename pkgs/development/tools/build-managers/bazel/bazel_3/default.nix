@@ -17,12 +17,12 @@
 , writeTextFile }:
 
 let
-  version = "3.3.1";
+  version = "3.7.0";
 
   src = fetchurl {
     url =
       "https://github.com/bazelbuild/bazel/releases/download/${version}/bazel-${version}-dist.zip";
-    sha256 = "0ir796kl8r9hpr3li26qsdy1z2lx2bv82zmk4a2s7q64clyg9wg0";
+    sha256 = "1k73vbnh9wn66r97v6kb1qc3d5q44gydbx4zwhdnsxbwj4ikd1v3";
   };
 
   # Update with `eval $(nix-build -A bazel.updater)`,

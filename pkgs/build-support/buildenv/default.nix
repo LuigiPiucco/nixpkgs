@@ -2,7 +2,7 @@
 # a fork of the buildEnv in the Nix distribution.  Most changes should
 # eventually be merged back into the Nix distribution.
 
-{ buildPackages, runCommand, lib, substituteAll }:
+{ buildPackages, runCommand, lib, builder, defaultPostBuild ? "", defaultBuildInputs ? [] }:
 
 lib.makeOverridable
 ({ name
@@ -34,21 +34,14 @@ lib.makeOverridable
   extraPrefix ? ""
 
 , # Shell commands to run after building the symlink tree.
-  postBuild ? ""
+  postBuild ? defaultPostBuild
 
 , # Additional inputs. Handy e.g. if using makeWrapper in `postBuild`.
-  buildInputs ? []
+  buildInputs ? defaultBuildInputs
 
 , passthru ? {}
 , meta ? {}
 }:
-
-let
-  builder = substituteAll {
-    src = ./builder.pl;
-    inherit (builtins) storeDir;
-  };
-in
 
 runCommand name
   rec {

@@ -171,9 +171,11 @@ in
     deps = [ innoextract file-rename ]; }
     ../build-support/setup-hooks/gog-unpack.sh;
 
-  buildEnv = callPackage ../build-support/buildenv { }; # not actually a package
+  buildEnv = callPackage ../build-support/buildenv/symlink.nix { }; # not actually a package
+  buildEnvCopy = callPackage ../build-support/buildenv/copy.nix { };  # not actually a package
 
   # TODO: eventually migrate everything to buildFHSUserEnvBubblewrap
+  buildFHSEnv = callPackage ../build-support/build-fhs-userenv/env.nix { };
   buildFHSUserEnv = buildFHSUserEnvChroot;
   buildFHSUserEnvChroot = callPackage ../build-support/build-fhs-userenv { };
   buildFHSUserEnvBubblewrap = callPackage ../build-support/build-fhs-userenv-bubblewrap { };

@@ -1,5 +1,5 @@
 #! @perl@ -w
-
+@extraImports@
 use strict;
 use Cwd 'abs_path';
 use IO::Handle;
@@ -235,7 +235,7 @@ foreach my $relName (sort keys %symlinks) {
         mkpath $abs or die "cannot create directory `$abs': $!";
     } else {
         #print "creating symlink $relName to $target\n";
-        symlink $target, $abs ||
+        @addCommand@ $target, $abs ||
             die "error creating link `$abs': $!";
         $nrLinks++;
     }

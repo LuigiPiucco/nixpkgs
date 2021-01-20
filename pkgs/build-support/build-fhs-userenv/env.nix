@@ -1,9 +1,10 @@
-{ stdenv, buildEnv, writeText, pkgs, pkgsi686Linux }:
+{ stdenv, buildEnv, buildEnvCopy, writeText, pkgs, pkgsi686Linux }:
 
 { name, profile ? ""
 , targetPkgs ? pkgs: [], multiPkgs ? pkgs: []
 , extraBuildCommands ? "", extraBuildCommandsMulti ? ""
 , extraOutputsToInstall ? []
+, noOutsideReferences ? false
 }:
 
 # HOWTO:
@@ -22,6 +23,8 @@
 # /lib will link to /lib32
 
 let
+  envBuild = if noOutsideReferences then buildEnvCopy else buildEnv;
+
   is64Bit = stdenv.hostPlatform.parsed.cpu.bits == 64;
   isMultiBuild  = multiPkgs != null && is64Bit;
   isTargetBuild = !isMultiBuild;
@@ -119,24 +122,26 @@ let
   };
 
   # Composes a /usr-like directory structure
-  staticUsrProfileTarget = buildEnv {
+  staticUsrProfileTarget = envBuild {
     name = "${name}-usr-target";
     paths = [ etcPkg ] ++ basePkgs ++ targetPaths;
     extraOutputsToInstall = [ "out" "lib" "bin" ] ++ extraOutputsToInstall;
     ignoreCollisions = true;
   };
 
-  staticUsrProfileMulti = buildEnv {
+  staticUsrProfileMulti = envBuild {
     name = "${name}-usr-multi";
     paths = baseMultiPkgs ++ multiPaths;
     extraOutputsToInstall = [ "out" "lib" ] ++ extraOutputsToInstall;
     ignoreCollisions = true;
   };
 
+  cpFlags = if noOutsideReferences then "raf" else "rsHf";
+
   # setup library paths only for the targeted architecture
   setupLibDirs_target = ''
     # link content of targetPaths
-    cp -rsHf ${staticUsrProfileTarget}/lib lib
+    cp -${cpFlags} ${staticUsrProfileTarget}/lib lib
     ln -s lib lib${if is64Bit then "64" else "32"}
   '';
 
@@ -147,16 +152,19 @@ let
     ln -s lib64 lib
 
     # copy glibc stuff
-    cp -rsHf ${staticUsrProfileTarget}/lib/32/* lib32/ && chmod u+w -R lib32/
+    cp -${cpFlags} ${staticUsrProfileTarget}/lib/32/* lib32/ && chmod u+w -R lib32/
 
     # copy content of multiPaths (32bit libs)
-    [ -d ${staticUsrProfileMulti}/lib ] && cp -rsHf ${staticUsrProfileMulti}/lib/* lib32/ && chmod u+w -R lib32/
+    [ -d ${staticUsrProfileMulti}/lib ] && cp -${cpFlags} ${staticUsrProfileMulti}/lib/* lib32/ && chmod u+w -R lib32/
 
     # copy content of targetPaths (64bit libs)
-    cp -rsHf ${staticUsrProfileTarget}/lib/* lib64/ && chmod u+w -R lib64/
+    cp -${cpFlags} ${staticUsrProfileTarget}/lib/* lib64/ && chmod u+w -R lib64/
 
     # symlink 32-bit ld-linux.so
-    ln -Ls ${staticUsrProfileTarget}/lib/32/ld-linux.so.2 lib/
+    ${if noOutsideReferences then "cp -a" else "ln -Ls"} ${staticUsrProfileTarget}/lib/32/ld-linux.so.2 lib/
+
+    ln -s ../lib64 lib/x86_64-linux-gnu
+    ln -s ../lib32 lib/i386-linux-gnu
   '';
 
   setupLibDirs = if isTargetBuild then setupLibDirs_target
@@ -169,14 +177,14 @@ let
     ${setupLibDirs}
     for i in bin sbin share include; do
       if [ -d "${staticUsrProfileTarget}/$i" ]; then
-        cp -rsHf "${staticUsrProfileTarget}/$i" "$i"
+        cp -${cpFlags} "${staticUsrProfileTarget}/$i" "$i"
       fi
     done
     cd ..
 
     for i in var etc; do
       if [ -d "${staticUsrProfileTarget}/$i" ]; then
-        cp -rsHf "${staticUsrProfileTarget}/$i" "$i"
+        cp -${cpFlags} "${staticUsrProfileTarget}/$i" "$i"
       fi
     done
     for i in usr/{bin,sbin,lib,lib32,lib64}; do

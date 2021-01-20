@@ -1,5 +1,6 @@
 { config, lib, writeScript, buildFHSUserEnv, steam, glxinfo-i686
 , steam-runtime-wrapped, steam-runtime-wrapped-i686 ? null
+, steamrt-fhs ? null
 , extraPkgs ? pkgs: [ ] # extra packages to add to targetPkgs
 , extraLibraries ? pkgs: [ ] # extra packages to add to multiPkgs
 , extraProfile ? "" # string to append to profile
@@ -61,6 +62,10 @@ let
     if [ -r $HOME/.local/share/Steam/bootstrap.tar.xz ]; then
       chmod +w $HOME/.local/share/Steam/bootstrap.tar.xz
     fi
+  '';
+
+  fixPressureVessel = lib.optionalString (steamrt-fhs != null) ''
+    export PRESSURE_VESSEL_GRAPHICS_PROVIDER=${steamrt-fhs}
   '';
 
   setupSh = writeScript "setup.sh" ''
@@ -273,6 +278,7 @@ in buildFHSUserEnv rec {
     fi
     ${lib.optionalString (!nativeOnly) exportLDPath}
     ${fixBootstrap}
+    ${fixPressureVessel}
     exec steam "$@"
   '';
 
@@ -307,6 +313,7 @@ in buildFHSUserEnv rec {
       shift
       ${lib.optionalString (!nativeOnly) exportLDPath}
       ${fixBootstrap}
+      ${fixPressureVessel}
       exec -- "$run" "$@"
     '';
   };

@@ -21,6 +21,7 @@ let
       inherit buildFHSUserEnv;
     };
     steamcmd = callPackage ./steamcmd.nix { };
+    steamrt-fhs = callPackage ./steamrt.nix { };
   };
 
 in self

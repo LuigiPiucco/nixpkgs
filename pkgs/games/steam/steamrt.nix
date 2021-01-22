@@ -1,6 +1,7 @@
 { buildFHSEnv
 , lib
-, videoDrivers ? []
+, videoDrivers ? pkgs: []
+, videoDrivers32 ? pkgs: []
 }:
 
 let
@@ -57,22 +58,23 @@ in buildFHSEnv {
   targetPkgs = pkgs: with pkgs;
     [ intel-media-driver intel-gmmlib ]
     ++ generalPackageSelector pkgs
-    ++ videoDrivers;
+    ++ videoDrivers pkgs;
   multiPkgs = pkgs: with pkgs;
     [ vaapiIntel ]
     ++ generalPackageSelector pkgs
-    ++ videoDrivers;
+    ++ videoDrivers32 pkgs;
   noOutsideReferences = true;
   extraBuildCommands = ''
     rm $out/lib/ld-linux.so.2
     ln -s i386-linux-gnu/ld-linux.so.2 $out/lib/ld-linux.so.2
     escapedOut="''${out//\//\\\/}"
     chmod -R 777 $out/usr/share
+    [[ -f $out/usr/share/vulkan/icd.d/nvidia_icd.json ]] && cp $out/usr/share/vulkan/icd.d/nvidia_icd{,32}.json
     find $out/usr/share/{glvnd/egl_vendor.d,vulkan/*} -type f -exec sed -i "s/\/nix\/store\/.*\//\/usr\/lib\//g" {} \;
+    [[ -f $out/usr/share/vulkan/icd.d/nvidia_icd32.json ]] && sed -i 's/\/usr\/lib/\/usr\/lib32/g' $out/usr/share/vulkan/icd.d/nvidia_icd32.json
     chmod -R 777 $out/etc
     ldconfig -C /etc/ld.so.cache -r $out \
       /lib64 /lib32 /lib \
       /lib64/dri /lib32/dri /lib/dri
   '';
-  extraOutputsToInstall = [ "lib32" ];
 }

@@ -6,6 +6,7 @@
 with lib;
 
 let
+  systemLibs = lib.concatMapStringsSep " " (x: "${getLib x}/lib") config.environment.systemPackages;
 
   requiredPackages = map (pkg: setPrio ((pkg.meta.priority or 5) + 3) pkg)
     [ pkgs.acl
@@ -48,6 +49,8 @@ let
         pkgs.strace
       ];
 
+    drivers = config.hardware.opengl.package;
+    drivers32 = config.hardware.opengl.package32;
 in
 
 {
@@ -162,6 +165,8 @@ in
           if [ -x $out/bin/glib-compile-schemas -a -w $out/share/glib-2.0/schemas ]; then
               $out/bin/glib-compile-schemas $out/share/glib-2.0/schemas
           fi
+
+          ${pkgs.glibc.bin}/bin/ldconfig -C $out/etc/ld.so.cache ${drivers}/lib ${drivers32}/lib ${systemLibs}
 
           ${config.environment.extraSetup}
         '';

@@ -71,9 +71,6 @@ stdenv.mkDerivation ({
       /* Allow NixOS and Nix to handle the locale-archive. */
       ./nix-locale-archive.patch
 
-      /* Don't use /etc/ld.so.cache, for non-NixOS systems.  */
-      ./dont-use-system-ld-so-cache.patch
-
       /* Don't use /etc/ld.so.preload, but /etc/ld-nix.so.preload.  */
       ./dont-use-system-ld-so-preload.patch
 
@@ -150,7 +147,7 @@ stdenv.mkDerivation ({
   configureFlags =
     [ "-C"
       "--enable-add-ons"
-      "--sysconfdir=/etc"
+      "--sysconfdir=/run/current-system/sw/etc"
       "--enable-stackguard-randomization"
       (lib.withFeatureAs withLinuxHeaders "headers" "${linuxHeaders}/include")
       (lib.enableFeature profilingLibraries "profile")

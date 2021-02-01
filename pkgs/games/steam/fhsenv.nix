@@ -44,41 +44,6 @@ let
       ++ lib.optional withPrimus primus
       ++ extraPkgs pkgs;
 
-  commonExtraBuildCommands1 = if (!nativeOnly) then ''
-    mkdir -p steamrt
-    ln -s ../lib/steam-runtime steamrt/${steam-runtime-wrapped.arch}
-    ${lib.optionalString (steam-runtime-wrapped-i686 != null) ''
-      ln -s ../lib32/steam-runtime steamrt/${steam-runtime-wrapped-i686.arch}
-    ''}
-    ln -s ${runSh} steamrt/run.sh
-    ln -s ${setupSh} steamrt/setup.sh
-  '' else ''
-    ln -s /usr/lib/libbz2.so usr/lib/libbz2.so.1.0
-    ${lib.optionalString (steam-runtime-wrapped-i686 != null) ''
-      ln -s /usr/lib32/libbz2.so usr/lib32/libbz2.so.1.0
-    ''}
-  '';
-
-  commonExtraBuildCommands2 = ''
-    chmod -R 755 usr/share/vulkan
-    for icd in usr/share/vulkan/icd.d/*.json; do
-      if [ -L $icd ]; then
-         target=$(readlink -e $icd)
-         rm $icd
-         cp $target $icd
-      fi
-      QUAL=64
-      if [ -z "''${icd##*i686*}" ]; then
-        QUAL=32
-      fi
-      sed -i "s/\/nix\/store\/.*\/lib\//\/lib$QUAL\//g" $icd
-    done
-    if [ -f usr/share/vulkan/icd.d/nvidia_icd.json ]; then
-      cp usr/share/vulkan/icd.d/nvidia_icd{,32}.json
-      sed -i 's/64/32/g' usr/share/vulkan/icd.d/nvidia_icd32.json
-    fi
-  '';
-
   ldPath = lib.optionals stdenv.is64bit [ "/lib64" ]
   ++ [ "/lib32" ]
   ++ map (x: "/steamrt/${steam-runtime-wrapped.arch}/" + x) steam-runtime-wrapped.libs
@@ -254,7 +219,38 @@ in buildFHSUserEnv rec {
     libvdpau
   ] ++ steamPackages.steam-runtime-wrapped.overridePkgs) ++ extraLibraries pkgs;
 
-  extraBuildCommands = commonExtraBuildCommands1 + commonExtraBuildCommands2;
+  extraBuildCommands = (if (!nativeOnly) then ''
+    mkdir -p steamrt
+    ln -s ../lib/steam-runtime steamrt/${steam-runtime-wrapped.arch}
+    ${lib.optionalString (steam-runtime-wrapped-i686 != null) ''
+      ln -s ../lib32/steam-runtime steamrt/${steam-runtime-wrapped-i686.arch}
+    ''}
+    ln -s ${runSh} steamrt/run.sh
+    ln -s ${setupSh} steamrt/setup.sh
+  '' else ''
+    ln -s /usr/lib/libbz2.so usr/lib/libbz2.so.1.0
+    ${lib.optionalString (steam-runtime-wrapped-i686 != null) ''
+      ln -s /usr/lib32/libbz2.so usr/lib32/libbz2.so.1.0
+    ''}
+  '') + ''
+    chmod -R 755 usr/share/vulkan
+    for icd in usr/share/vulkan/icd.d/*.json; do
+      if [ -L $icd ]; then
+         target=$(readlink -e $icd)
+         rm $icd
+         cp $target $icd
+      fi
+      QUAL=64
+      if [ -z "''${icd##*i686*}" ]; then
+        QUAL=32
+      fi
+      sed -i "s/\/nix\/store\/.*\/lib\//\/lib$QUAL\//g" $icd
+    done
+    if [ -f usr/share/vulkan/icd.d/nvidia_icd.json ]; then
+      cp usr/share/vulkan/icd.d/nvidia_icd{,32}.json
+      sed -i 's/64/32/g' usr/share/vulkan/icd.d/nvidia_icd32.json
+    fi
+  '';
 
   extraInstallCommands = ''
     mkdir -p $out/share/applications
@@ -318,13 +314,7 @@ in buildFHSUserEnv rec {
     name = "steam-run";
 
     targetPkgs = commonTargetPkgs;
-    extraBuildCommands = commonExtraBuildCommands1 + ''
-      chmod 755 usr/share
-      target=$(readlink -e usr/share/vulkan)
-      rm usr/share/vulkan
-      cp -rT $target usr/share/vulkan
-    '' + commonExtraBuildCommands2;
-    inherit multiPkgs;
+    inherit multiPkgs extraBuildCommands;
 
     inherit unshareIpc unsharePid;
 

@@ -133,6 +133,7 @@ in buildFHSUserEnv rec {
     xorg.libXfixes
     libGL
     libva
+    mesa.drivers
 
     # Not formally in runtime but needed by some games
     at-spi2-atk

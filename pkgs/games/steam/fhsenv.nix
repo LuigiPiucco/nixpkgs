@@ -96,9 +96,17 @@ in buildFHSUserEnv rec {
     xorg.libXext
     xorg.libX11
     xorg.libXfixes
+    xorg.libxcb
+    xorg.libXdamage
+    xorg.libxshmfence
+    xorg.libXxf86vm
     libGL
     libva
     mesa.drivers
+    expat
+    wayland
+    llvm_11.lib
+    libelf
 
     # Not formally in runtime but needed by some games
     at-spi2-atk
@@ -149,11 +157,9 @@ in buildFHSUserEnv rec {
 
     # Without these it silently fails
     xorg.libXinerama
-    xorg.libXdamage
     xorg.libXcursor
     xorg.libXrender
     xorg.libXScrnSaver
-    xorg.libXxf86vm
     xorg.libXi
     xorg.libSM
     xorg.libICE
@@ -165,7 +171,6 @@ in buildFHSUserEnv rec {
     fontconfig
     cairo
     pango
-    expat
     dbus
     cups
     libcap
@@ -181,7 +186,6 @@ in buildFHSUserEnv rec {
     # Verified games requirements
     xorg.libXt
     xorg.libXmu
-    xorg.libxcb
     libogg
     libvorbis
     SDL
@@ -190,7 +194,6 @@ in buildFHSUserEnv rec {
     openssl
     libidn
     tbb
-    wayland
     libxkbcommon
 
     # Other things from runtime
